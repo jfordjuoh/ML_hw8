@@ -147,18 +147,24 @@ las <- train(
 
 #Print the values of alpha and lambda that gave best prediction
 las$bestTune %>% knitr::kable() # 1(alpha)|0.0005(lambda)|0.9734 (Accuracy)
+```
 
+```{r LASSO, results='hide'}
 #Print all of the options examined
 las$results %>% knitr::kable()
+```
 
+```{r LASSO con't}
 # Model coefficients
 coef(las$finalModel, las$bestTune$lambda)
 
 #Confusion Matrix
 confusionMatrix(las) 
-
 ```
 Based on the training data model, the two features that are important are birth weight and the infant growth Z-score with a beta of 21.03 and 21.32, respectively.
+
+Child height, and mother age went to zero, Some of the pregnancy RBC concentration of elements went to 0.
+Accuracy of 0.9734
 
 ### STEP FOUR: Test your final model in the testing dataset
 Use the implementation of your model in the testing set to obtain final performance metrics and perform the inference needed to address your research question. 
