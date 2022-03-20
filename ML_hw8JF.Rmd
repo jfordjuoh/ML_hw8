@@ -1,0 +1,180 @@
+---
+title: "Exercise & HW Assignment: Dealing with High Dimensional Data (ML_HW8)"
+author: Judy Fordjuoh
+date: March 20, 2022
+output: word_document
+---
+
+## Exercise 1: Feature selection using regularization methods
+
+This exercise is *loosely* based on the following paper: Integration of an interpretable machine learning algorithm to identify early life risk factors of childhood obesity among preterm infants: a prospective birth cohort https://doi.org/10.1186/s12916-020-01642-6. The data used in this exercise are an altered version of data available from the HHEAR Data Center, with dois https://doi.org/10.36043/2017-1740_EPI_58 and https://doi.org/10.36043/2017-1740_MAIN_84
+
+
+In this exercise, you will utilize the caret package to optimize a regularization algorithm for feature selection. You will compare results when you include variables that could induce confounding as features entered into the algorithm.  You will also consider how study design and source of data can impact the conclusions drawn by a machine learning analysis. 
+
+***
+
+### Description of the Theoretical Study and Data
+
+The goal of this study is to identify prenatal social and environmental risk factors for childhood overweight/obesity among preterm infants.This study is a prospective birth cohort involving mother-child pairs. Women were enrolled during the first or second trimester of pregnancy and were followed up via visiting clinics until the birth of their children. Women and children were then followed up periodically during infancy and childhood. A total of 1447 singleton children were born preterm, prior to 37 weeks gestation and had complete data on maternal demographics and pregnancy, birth characteristics, lifestyle factors, biospecimen analyzed for exposure to metals and to define childhood obesity at age 5. You have recently been hired as a research data analyst, and tasked with performing the analysis for this study.You are provided with a dataset containing a number of features, in addition to a binary outcome indicating childhood overweight or obesity vs normal weight. 
+
+Features in the dataset have informative names. The following categorical features use codes to indicate the different labels:
+
+Child.Human.Biological.Sex: sex assigned at birth of child; 
+110:Female
+111:Male
+
+HHIncome: Household income during pregnancy; 
+159: <$5,000
+204:$5,000-$10,000, 
+205: $10,000-$20,000, 
+206: $20,000-$40,000, 
+207: $40,000-$70,000, 
+208: >$70,000
+
+Race_ethnicity: Race or ethnicity of child, as reported by parent;
+47:"Hispanic or Latino Ethnicity"
+54:"Multiracial"
+210:"Black Non-Hispanic"
+212:"American Indian Non-Hispanic"
+214:"White Non-Hispanic"
+217:"Asian Non-Hispanic"
+855824:"Other race/ethnicity than white/black/hispanic/asian/american indian/multiracial"
+
+Mother_Education: Highest Educational Attainment at time of Pregnancy
+4:"Advanced Graduate Degree"
+12:"College Graduate"
+32:"Graduated From High School"
+203:"Some College or Technical School"
+215:"Less than High School"
+
+Smoking_Preg: maternal smoking during pregnancy
+1: No smoking during pregnancy
+2: Active smoker during pregnancy
+81: Quit smoking before pregnancy
+
+ow_obesity: overweight or obesity during childhood
+1: Overweight or Obese >= 85th percentile
+0: Typical weight <85th percentile (no underweight children in sample)
+
+***
+
+###Before Data Analysis
+Question 1: What additional information, if any, would you want from the principal study investigators in regards to the above features? 
+
+Question 2: Look at the features in the dataset before you start your analysis. Are there any you want to exclude from your analysis completely? Why or why not? Are there any you want to recode or transform? Why or why not?
+
+Question 3: Are any of the features not of interest as modifiable contributors to childhood overweight/obesity themselves, but in an explanatory model, you would typically include them? Will you include them in your analysis?
+
+
+### Step 1: Load Packages and Prepare Data
+You will start by loading the needed packages. Some are already listed, but you can choose to use different ones. You will need to clean the data, check that values are plausible, ensure that all variables are the correct type for the algorithm and packages you want to use, etc.
+
+```{r data_prep}
+library(tidyverse)
+library(caret)
+library(glmnet)
+library(Amelia)
+
+
+
+
+```
+
+### Step 2: Decide on a pipeline
+
+Question 4: In previous exercises, we often partition our sample into training and testing. We optimize hyperparameters using cross-validation. Is this pipeline still necessary if our goal is feature selection and not building a prediction model to apply to new data? What do you think? 
+
+Regardless of your answer above, partition the data into a 70/30 split just to get the practice with the programming code to partition.
+
+```{r partition}
+
+```
+
+### Step 3: Construct a model using a regularization algorithm and the features of interest in the training data
+
+Question 5: Which regularization algorithm seems most appropriate for this research question? Justify your choice. 
+
+Question 6: Which metrics will you use to evaluate your model? Consider your research question and the outcome of interest. 
+
+Assess how the metric(s) change(s) based on values of the hyperparameters. Construct a grid to explore various values (do not just use the default parameters). Once you have a final model, determine the features that are considered "important" based on the model output.
+
+ 
+```{r}
+
+```
+### Step 4: Test your final model in the testing dataset
+
+Use the implementation of your model in the testing set to obtain final performance metrics and perform the inference needed to address your research question. 
+
+Question 7: Summarize your final conclusion in 2-3 sentences
+
+```{r}
+
+```
+
+### Step 5: Construct another model, making a different choice of variable inclusion. 
+
+Redo the above, but now make the opposite choice about variable inclusion. That is, if you did not include the features that themselves might not be modifiable contributors to childhood overweight/obesity, but you would typically include in an explanatory model, include them now. Conversely, if you include those variables previously, exclude them now
+
+Question 7: Do the "important" features change when you make a differnt choice about the other features? Do the hyperparameters that optimize the model change when the additional variables are included? What about model performance?
+
+```{r}
+
+```
+
+## Exercise 2: Creating more refined phenotypes for an explanatory analysis.
+
+This exercise is *loosely* based on the following paper: Deploying unsupervised clustering analysis to derive clinical phenotypes and risk factors associated with mortality risk in 2022 critically ill patients with COVID-19 in Spain doi:10.1186/s13054-021-03487-8. Data were simulated and are not true COVID data.
+
+Researchers are interested in understanding the factors associated with ICU mortality among COVID-19 patients. They hypothesize there are different clinical phenotypes that could be at different risks for mortality and require different medical interventions. The goal of this research is to determine if patient features including demographics and clinical data at ICU admission could be used to separate COVID-19 patients into distinct phenotypic clusters. The secondary aim was to determine if identified phenotypic clusters had different risk of mortality. 
+
+You are provided with the following dataset for a subset of 178 COVID-19 patients, with the instructions to conduct an unsupervised analysis to identify phenotypic clusters within the patient population, describe the clusters in terms of the input features and then determine if there are differences in mortality rate across the clusters. All feature data in the dataset have been centered and scaled. The outcome, mortality, is a binary indicator.
+
+Variables in the dataset (covid.csv) are:
+
+Ageyr: the age of the patient at admission to the ICU
+APACHE:APACHE II Score, Acute Physiology and Chronic Health Evaluation II Score
+SOFA: SOFA Score Sequential Organ Failure Assessment
+DDimer: D dimer, a fibrin degradation product, can indicate blood clot formation and breakdown
+SerumLactate: measures level of lactic acid in the blood, can be indicator of hypoxia
+Ferritin: measure of iron sufficiency in blood
+CRP: C-reactive protein, measure of inflammation
+Creatinine: product of protein metabolism, high levels can indicate impaired kidney function
+WBC: concentration of white blood cells, marker of infection
+DBP: diastolic blood pressure
+Procalcitonin: marker of bacterial infection
+IGA: immunoglobulin A, measure of antibodies found in mucous membranes
+Oxmetric.1: measure of oxygen saturation
+mortality: 1=Died in ICU, 0=Survived
+
+***
+
+### Step 1: Load needed libraries and implement the unsupervised analysis
+
+Question 1: Name one potential risk/concern of obtaining data that has already been centered and scaled.
+
+Question 2: What unsupervised analysis do you think is appropriate for this research question? Justify your answer.
+
+Implement the unsupervised analysis you chose in Question 2, implementing appropriate analyses to determine the number of phenotypic clusters to keep within the analysis.
+
+```{r}
+
+```
+
+### Step 2: Interpret the clusters
+
+Describe the clusters in terms of both their input features and the incidence of mortality within the cluster.
+
+```{r}
+
+```
+
+Question 3: A researcher at a different medical institution has heard about your analysis and is interested in using your results to determine risk of mortality within their ICU. What are some limitations or concerns of using the results from your unsupervised analysis in a different setting?
+
+
+
+
+
+
+
