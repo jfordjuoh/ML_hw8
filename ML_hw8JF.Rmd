@@ -5,7 +5,7 @@ date: March 20, 2022
 output: word_document
 ---
 
-## Exercise 1: Feature selection using regularization methods
+# Exercise 1: Feature selection using regularization methods
 
 This exercise is *loosely* based on the following paper: Integration of an interpretable machine learning algorithm to identify early life risk factors of childhood obesity among preterm infants: a prospective birth cohort https://doi.org/10.1186/s12916-020-01642-6. The data used in this exercise are an altered version of data available from the HHEAR Data Center, with dois https://doi.org/10.36043/2017-1740_EPI_58 and https://doi.org/10.36043/2017-1740_MAIN_84
 
@@ -59,15 +59,18 @@ ow_obesity: overweight or obesity during childhood
 
 ***
 
-###Before Data Analysis
-Question 1: What additional information, if any, would you want from the principal study investigators in regards to the above features? 
+## BEFORE DATA ANALYSIS
+### Question 1: What additional information, if any, would you want from the principal study investigators in regards to the above features? 
+I would love to know why they chose the above features and how they decided to come up with the way they measured or the classifications they created for each feature. I would also like to know if theyh considered measuring other factors such as gestational weight gain, maternal overweight/obesity, access to healthy food during pregnancy, and access to prenatal care, as these are all characteristics that could be related to the outcome of childhood obesity.
 
-Question 2: Look at the features in the dataset before you start your analysis. Are there any you want to exclude from your analysis completely? Why or why not? Are there any you want to recode or transform? Why or why not?
+### Question 2: Look at the features in the dataset before you start your analysis. Are there any you want to exclude from your analysis completely? Why or why not? Are there any you want to recode or transform? Why or why not?
+I would recode the household income into quintiles (from lowest income to highest income). I would do this so that approximately 20% of the sample/population is in each group. This makes it easier to compare between groups in this study. Equally important, based on the amount of participants in each quintile, it will provide a better understanding of the socioeconomic status' represented in the study. Immediately exclude the features that measure specific RBC concentration of elements in the participants pregnancy sample. Some elements like lead may be interesting to analyze because if there are high levels, it can give us some insight on how the participant was living  (i.e. if they are living in a poorer neighborhood with buildings with old lead paint etc.). However, overall I do not think including the element features will provide much value in our study of the development of childhood obesity. 
 
-Question 3: Are any of the features not of interest as modifiable contributors to childhood overweight/obesity themselves, but in an explanatory model, you would typically include them? Will you include them in your analysis?
 
+### Question 3: Are any of the features not of interest as modifiable contributors to childhood overweight/obesity themselves, but in an explanatory model, you would typically include them? Will you include them in your analysis?
+Features such as race/ethnicity of child is not an interest as a modifiable contributor to childhood overweight/obesity itself. Race is a social construct and based on my limited knowledge, certain races are not genetically more or less predisposed to childhood obesity in comparison to others. However, I would still include it in the model since we know that certain races and communities of color have been systematically oppressed and the effects of this can influence the rate of childhood obesity. 
 
-### Step 1: Load Packages and Prepare Data
+## STEP ONE: Load Packages and Prepare Data
 You will start by loading the needed packages. Some are already listed, but you can choose to use different ones. You will need to clean the data, check that values are plausible, ensure that all variables are the correct type for the algorithm and packages you want to use, etc.
 
 ```{r data_prep}
@@ -76,46 +79,135 @@ library(caret)
 library(glmnet)
 library(Amelia)
 
+library(dplyr)
+library(readxl)
+library(knitr)
+library(randomForest)
+library(gbm)
+library(e1071)
+library(rpart)
+library(caret)
+library(rpart.plot)
+library(pROC)
 
+bc = read.csv("/Users/judyfordjuoh/Desktop/Machine Learning/birthcohort_data.csv") %>%
+  janitor::clean_names() %>% 
+  mutate(ow_obesity = as.factor(ow_obesity)) %>%
+  mutate(ow_obesity = recode(ow_obesity,
+                            "0" = "Typical Weight",
+                            "1" = "Overweight/Obese")) 
+
+#No ID variable to stripping off 
+
+#Check distributions, missing data etc, omitting the NAs
+summary(bc)
+missmap(bc, main = "Missing values vs observed")
+#Since there is no missing data we won't do na.omit(bc)
+
+summary(bc$ow_obesity) #Notice that the data is unbalanced so we will have to upsample (increasing your minority sample) or downsample(decreasing your majority sample). Since my sample size is small, I will upsample.
 
 
 ```
 
-### Step 2: Decide on a pipeline
+## STEP TWO: Decide on a pipeline
 
-Question 4: In previous exercises, we often partition our sample into training and testing. We optimize hyperparameters using cross-validation. Is this pipeline still necessary if our goal is feature selection and not building a prediction model to apply to new data? What do you think? 
+### Question 4: In previous exercises, we often partition our sample into training and testing. We optimize hyperparameters using cross-validation. Is this pipeline still necessary if our goal is feature selection and not building a prediction model to apply to new data? What do you think? 
+It is still necessary to perform cross validation even if our goal is feature selection and not building a prediction model. Cross-validation is a means of estimating the performance of a method for fitting a model, rather than of the model itself, so all steps in fitting the model (including feature selection and optimizing the hyper-parameters) need to be performed independently in each fold of the cross-validation procedure. If you don't do this, then you will end up with an optimistically biased performance estimate. 
 
 Regardless of your answer above, partition the data into a 70/30 split just to get the practice with the programming code to partition.
 
 ```{r partition}
-
+#tidyverse way to create data partition
+train_indices <- createDataPartition(y = bc$ow_obesity,p = 0.7,list = FALSE)
+train_data <- bc[train_indices, ]
+test_data <- bc[-train_indices, ]
 ```
 
-### Step 3: Construct a model using a regularization algorithm and the features of interest in the training data
+## STEP THREE: Construct a model using a regularization algorithm (lasso, ridge, elastic net) and the features of interest in the training data
 
-Question 5: Which regularization algorithm seems most appropriate for this research question? Justify your choice. 
+### Question 5: Which regularization algorithm seems most appropriate for this research question? Justify your choice. 
+#### Q5 Ans: I will use LASSO. If we use LASSO, which is L1 regularization, some of the features can shrink down to a zero. This basically works as feature selection. I would not recommend use a ridge regression because with ridge, the features can shrink down but it’ll never be able to shrink it to zero, so I would retain all the features in the dataset. 
 
-Question 6: Which metrics will you use to evaluate your model? Consider your research question and the outcome of interest. 
+### Question 6: Which metrics will you use to evaluate your model? Consider your research question and the outcome of interest. 
+#### Q6 Ans: Since our outcome is binary we will use the confusion matrix/accuracy to evaluate our model. If we were using a continuous outcome/linear regression model, we would use postResample.
 
 Assess how the metric(s) change(s) based on values of the hyperparameters. Construct a grid to explore various values (do not just use the default parameters). Once you have a final model, determine the features that are considered "important" based on the model output.
 
  
-```{r}
+```{r LASSO}
+#NTS: first create a grid to search lambda
+lambda <- 10^seq(-5,5, length = 100)
+
+set.seed(200)
+
+#NTS: replace tuneLength with tuneGrid and alpha is 1 because we are doing lasso. If we were doing rigid it would be 0. 
+las <- train(
+  ow_obesity ~., data = train_data, method = "glmnet", trControl = trainControl("cv", number = 10, sampling = "up"), preProc = c("center", "scale"), tuneGrid = expand.grid(alpha = 1, lambda = lambda)
+)
+
+#Print the values of alpha and lambda that gave best prediction
+las$bestTune %>% knitr::kable() # 1(alpha)|0.0005(lambda)|0.9734 (Accuracy)
+
+#Print all of the options examined
+las$results %>% knitr::kable()
+
+# Model coefficients
+coef(las$finalModel, las$bestTune$lambda)
+
+#Confusion Matrix
+confusionMatrix(las) 
 
 ```
-### Step 4: Test your final model in the testing dataset
+Based on the training data model, the two features that are important are birth weight and the infant growth Z-score with a beta of 21.03 and 21.32, respectively.
 
+### STEP FOUR: Test your final model in the testing dataset
 Use the implementation of your model in the testing set to obtain final performance metrics and perform the inference needed to address your research question. 
 
-Question 7: Summarize your final conclusion in 2-3 sentences
+```{r}
+#Using the test data to make predictions
+
+las2 <- las %>% predict(test_data)
+confusionMatrix(las2,test_data$ow_obesity, positive = "Overweight/Obese")
+
+#Obtain predicted probabilities
+test.outcome.probs<-predict(las, test_data, type="prob")
+
+testProbs.rmodel <- data.frame(obs = test_data$ow_obesity,
+                        pred.las=test.outcome.probs[,2])
+
+#Create calibration plot
+obesity_PlotData.rmodel<-calibration(obs ~ pred.las, data = testProbs.rmodel, class="Overweight/Obese", cuts=5)
+
+xyplot(obesity_PlotData.rmodel, auto.key = list(columns = 2))
+
+plot(test.outcome.probs[,2])
+```
+
+```{r LASSO ROC Curve}
+#Create ROC Curve for Analysis
+pred.prob <- predict(las, test_data, type = "prob")
+
+analysis <- roc(response = test_data$ow_obesity, predictor = pred.prob[,2])
+plot(1 - analysis$specificities,analysis$sensitivities,type = "l",
+ylab = "Sensitivity",xlab = "1-Specificity",col = "black",lwd = 2,
+main = "ROC Curve for Obesity Classification")
+abline(a = 0,b = 1)
+
+#AUC represents a degree or measure of separability. It tells us how much the model is capable of distinguishing between classes. Higher the AUC, better the model is at predicting the probability of class YES higher than the probability of class NO.
+```
+
+
+# Question 7: Summarize your final conclusion in 2-3 sentences
 
 ```{r}
 
 ```
 
-### Step 5: Construct another model, making a different choice of variable inclusion. 
+### STEP FIVE: Construct another model, making a different choice of variable inclusion. 
 
 Redo the above, but now make the opposite choice about variable inclusion. That is, if you did not include the features that themselves might not be modifiable contributors to childhood overweight/obesity, but you would typically include in an explanatory model, include them now. Conversely, if you include those variables previously, exclude them now
+
+so do a ridge regression.
 
 Question 7: Do the "important" features change when you make a differnt choice about the other features? Do the hyperparameters that optimize the model change when the additional variables are included? What about model performance?
 
@@ -123,7 +215,7 @@ Question 7: Do the "important" features change when you make a differnt choice a
 
 ```
 
-## Exercise 2: Creating more refined phenotypes for an explanatory analysis.
+# Exercise 2: Creating more refined phenotypes for an explanatory analysis.
 
 This exercise is *loosely* based on the following paper: Deploying unsupervised clustering analysis to derive clinical phenotypes and risk factors associated with mortality risk in 2022 critically ill patients with COVID-19 in Spain doi:10.1186/s13054-021-03487-8. Data were simulated and are not true COVID data.
 
@@ -159,7 +251,8 @@ Question 2: What unsupervised analysis do you think is appropriate for this rese
 Implement the unsupervised analysis you chose in Question 2, implementing appropriate analyses to determine the number of phenotypic clusters to keep within the analysis.
 
 ```{r}
-
+covid = read.csv("/Users/judyfordjuoh/Desktop/Machine Learning/covid.csv") %>%
+  janitor::clean_names() 
 ```
 
 ### Step 2: Interpret the clusters
