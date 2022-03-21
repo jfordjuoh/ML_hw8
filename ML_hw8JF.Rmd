@@ -4,6 +4,8 @@ author: Judy Fordjuoh
 date: March 20, 2022
 output: word_document
 ---
+Q1 in part 2
+
 
 # Exercise 1: Feature selection using regularization methods
 
@@ -61,19 +63,19 @@ ow_obesity: overweight or obesity during childhood
 
 ## BEFORE DATA ANALYSIS
 ### Question 1: What additional information, if any, would you want from the principal study investigators in regards to the above features? 
-I would love to know why they chose the above features and how they decided to come up with the way they measured or the classifications they created for each feature. I would also like to know if theyh considered measuring other factors such as gestational weight gain, maternal overweight/obesity, access to healthy food during pregnancy, and access to prenatal care, as these are all characteristics that could be related to the outcome of childhood obesity.
+#### I would love to know why they chose the above features and how they decided to come up with the way they measured or the classifications they created for each feature. I would also like to know if theyh considered measuring other factors such as gestational weight gain, maternal overweight/obesity, access to healthy food during pregnancy, and access to prenatal care, as these are all characteristics that could be related to the outcome of childhood obesity.
 
 ### Question 2: Look at the features in the dataset before you start your analysis. Are there any you want to exclude from your analysis completely? Why or why not? Are there any you want to recode or transform? Why or why not?
-I would recode the household income into quintiles (from lowest income to highest income). I would do this so that approximately 20% of the sample/population is in each group. This makes it easier to compare between groups in this study. Equally important, based on the amount of participants in each quintile, it will provide a better understanding of the socioeconomic status' represented in the study. Immediately exclude the features that measure specific RBC concentration of elements in the participants pregnancy sample. Some elements like lead may be interesting to analyze because if there are high levels, it can give us some insight on how the participant was living  (i.e. if they are living in a poorer neighborhood with buildings with old lead paint etc.). However, overall I do not think including the element features will provide much value in our study of the development of childhood obesity. 
+#### I would recode the household income into quintiles (from lowest income to highest income). I would do this so that approximately 20% of the sample/population is in each group. This makes it easier to compare between groups in this study. Equally important, based on the amount of participants in each quintile, it will provide a better understanding of the socioeconomic status' represented in the study. Immediately exclude the features that measure specific RBC concentration of elements in the participants pregnancy sample. Some elements like lead may be interesting to analyze because if there are high levels, it can give us some insight on how the participant was living  (i.e. if they are living in a poorer neighborhood with buildings with old lead paint etc.). However, overall I do not think including the element features will provide much value in our study of the development of childhood obesity. 
 
 
 ### Question 3: Are any of the features not of interest as modifiable contributors to childhood overweight/obesity themselves, but in an explanatory model, you would typically include them? Will you include them in your analysis?
-Features such as race/ethnicity of child is not an interest as a modifiable contributor to childhood overweight/obesity itself. Race is a social construct and based on my limited knowledge, certain races are not genetically more or less predisposed to childhood obesity in comparison to others. However, I would still include it in the model since we know that certain races and communities of color have been systematically oppressed and the effects of this can influence the rate of childhood obesity. 
+#### Features such as race/ethnicity of child is not an interest as a modifiable contributor to childhood overweight/obesity itself. Race is a social construct and based on my limited knowledge, certain races are not genetically more or less predisposed to childhood obesity in comparison to others. However, I would still include it in the model since we know that certain races and communities of color have been systematically oppressed and the effects of this can influence the rate of childhood obesity. 
 
 ## STEP ONE: Load Packages and Prepare Data
 You will start by loading the needed packages. Some are already listed, but you can choose to use different ones. You will need to clean the data, check that values are plausible, ensure that all variables are the correct type for the algorithm and packages you want to use, etc.
 
-```{r data_prep}
+```{r data_prep, results='hide'}
 library(tidyverse)
 library(caret)
 library(glmnet)
@@ -82,14 +84,14 @@ library(Amelia)
 library(dplyr)
 library(readxl)
 library(knitr)
-library(randomForest)
 library(gbm)
 library(e1071)
 library(rpart)
-library(caret)
-library(rpart.plot)
 library(pROC)
+```
 
+
+```{r data prep, results='hide'}
 bc = read.csv("/Users/judyfordjuoh/Desktop/Machine Learning/birthcohort_data.csv") %>%
   janitor::clean_names() %>% 
   mutate(ow_obesity = as.factor(ow_obesity)) %>%
@@ -112,7 +114,7 @@ summary(bc$ow_obesity) #Notice that the data is unbalanced so we will have to up
 ## STEP TWO: Decide on a pipeline
 
 ### Question 4: In previous exercises, we often partition our sample into training and testing. We optimize hyperparameters using cross-validation. Is this pipeline still necessary if our goal is feature selection and not building a prediction model to apply to new data? What do you think? 
-It is still necessary to perform cross validation even if our goal is feature selection and not building a prediction model. Cross-validation is a means of estimating the performance of a method for fitting a model, rather than of the model itself, so all steps in fitting the model (including feature selection and optimizing the hyper-parameters) need to be performed independently in each fold of the cross-validation procedure. If you don't do this, then you will end up with an optimistically biased performance estimate. 
+#### It is still necessary to perform cross validation even if our goal is feature selection and not building a prediction model. Cross-validation is a means of estimating the performance of a method for fitting a model, rather than of the model itself, so all steps in fitting the model (including feature selection and optimizing the hyper-parameters) need to be performed independently in each fold of the cross-validation procedure. If you don't do this, then you will end up with an optimistically biased performance estimate. 
 
 Regardless of your answer above, partition the data into a 70/30 split just to get the practice with the programming code to partition.
 
@@ -134,7 +136,8 @@ test_data <- bc[-train_indices, ]
 Assess how the metric(s) change(s) based on values of the hyperparameters. Construct a grid to explore various values (do not just use the default parameters). Once you have a final model, determine the features that are considered "important" based on the model output.
 
  
-```{r LASSO}
+```{r las}
+
 #NTS: first create a grid to search lambda
 lambda <- 10^seq(-5,5, length = 100)
 
@@ -152,19 +155,16 @@ las$bestTune %>% knitr::kable() # 1(alpha)|0.0005(lambda)|0.9734 (Accuracy)
 ```{r LASSO, results='hide'}
 #Print all of the options examined
 las$results %>% knitr::kable()
-```
 
-```{r LASSO con't}
 # Model coefficients
 coef(las$finalModel, las$bestTune$lambda)
+```
 
+```{r LASSO cont}
 #Confusion Matrix
 confusionMatrix(las) 
 ```
-Based on the training data model, the two features that are important are birth weight and the infant growth Z-score with a beta of 21.03 and 21.32, respectively.
-
-Child height, and mother age went to zero, Some of the pregnancy RBC concentration of elements went to 0.
-Accuracy of 0.9734
+#### Based on the training data model, the two features that are important are birth weight and the infant growth Z-score with a beta of 21.03 and 21.32, respectively. Features like child height and mother age went to zero. Some of the pregnancy RBC concentration of elements also went to 0. The accuracy in this model is 0.9734.
 
 ### STEP FOUR: Test your final model in the testing dataset
 Use the implementation of your model in the testing set to obtain final performance metrics and perform the inference needed to address your research question. 
@@ -176,13 +176,13 @@ las2 <- las %>% predict(test_data)
 confusionMatrix(las2,test_data$ow_obesity, positive = "Overweight/Obese")
 
 #Obtain predicted probabilities
-test.outcome.probs<-predict(las, test_data, type="prob")
+test.outcome.probs <- predict(las, test_data, type = "prob")
 
 testProbs.rmodel <- data.frame(obs = test_data$ow_obesity,
-                        pred.las=test.outcome.probs[,2])
+                        pred.las = test.outcome.probs[,2])
 
 #Create calibration plot
-obesity_PlotData.rmodel<-calibration(obs ~ pred.las, data = testProbs.rmodel, class="Overweight/Obese", cuts=5)
+obesity_PlotData.rmodel <- calibration(obs ~ pred.las, data = testProbs.rmodel, class = "Overweight/Obese", cuts = 5)
 
 xyplot(obesity_PlotData.rmodel, auto.key = list(columns = 2))
 
@@ -199,27 +199,47 @@ ylab = "Sensitivity",xlab = "1-Specificity",col = "black",lwd = 2,
 main = "ROC Curve for Obesity Classification")
 abline(a = 0,b = 1)
 
-#AUC represents a degree or measure of separability. It tells us how much the model is capable of distinguishing between classes. Higher the AUC, better the model is at predicting the probability of class YES higher than the probability of class NO.
+#Our ROC curve is greater than 0.5 which indicates that we’re classifying the two classes – overweight/obese and typical weight –  better than random. And the closer we get to the shape on the right, which we would correspond to an increase in the area under the curve suggests that we are classifying or predicting better, so often you will see these types of curves as part of people’s evaluations for their predictive algorithms. 
 ```
+#### Our ROC curve is greater than 0.5 which indicates that we’re classifying the two classes – overwieght/obese and typical weight –  better than random.
 
 
-# Question 7: Summarize your final conclusion in 2-3 sentences
-
-```{r}
-
-```
+###  Question 7: Summarize your final conclusion in 2-3 sentences
+#### Q7 Ans:The accuracy of the model on the test data was 97.00 % which was similar to the accuracy of the model on the training data. Along witht the 97% accuracy, there was a sensitivity of 0.9902 and a specificity of 0.9637.
 
 ### STEP FIVE: Construct another model, making a different choice of variable inclusion. 
 
 Redo the above, but now make the opposite choice about variable inclusion. That is, if you did not include the features that themselves might not be modifiable contributors to childhood overweight/obesity, but you would typically include in an explanatory model, include them now. Conversely, if you include those variables previously, exclude them now
 
-so do a ridge regression.
-
 Question 7: Do the "important" features change when you make a differnt choice about the other features? Do the hyperparameters that optimize the model change when the additional variables are included? What about model performance?
 
-```{r}
+```{r ridge}
+lambda <- 10^seq(-5,5, length = 100)
 
+set.seed(150)
+
+#Note replacing tuneLength with tuneGrid
+ridge <- train(
+  ow_obesity ~., data = train_data, method = "glmnet", trControl = trainControl("cv", number = 10, sampling = "up"), preProc = c("center", "scale"), tuneGrid = expand.grid(alpha = 0, lambda = lambda)
+)
+
+#Print the values of alpha and lambda that gave best prediction
+ridge$bestTune %>% knitr::kable() # 0(alpha)|0.022(lambda)|0.8846(Accuracy)
 ```
+
+```{r RIDGE, results='hide'}
+#Print all of the options examined
+ridge$results %>% knitr::kable()
+
+# Model coefficients
+coef(ridge$finalModel, ridge$bestTune$lambda)
+```
+
+```{r RIDGE cont}
+#Confusion Matrix
+confusionMatrix(ridge) 
+```
+#### Since this is a ridge model, all of the features have remained in the model. The two main features (birth weight and the infant growth Z-score) remained the same but the betas decreased significantly to 1.58 and 1.92, respectively. The accuracy of the ridge model also reduced to 0.8846. 
 
 # Exercise 2: Creating more refined phenotypes for an explanatory analysis.
 
@@ -248,29 +268,61 @@ mortality: 1=Died in ICU, 0=Survived
 
 ***
 
-### Step 1: Load needed libraries and implement the unsupervised analysis
+### STEP 1: Load needed libraries and implement the unsupervised analysis
 
-Question 1: Name one potential risk/concern of obtaining data that has already been centered and scaled.
+```{r}
+library(stats)
+library(cluster)
+library(factoextra)
 
-Question 2: What unsupervised analysis do you think is appropriate for this research question? Justify your answer.
+covid = read.csv("/Users/judyfordjuoh/Desktop/Machine Learning/covid.csv") %>%
+  janitor::clean_names() 
+```
+### Question 1: Name one potential risk/concern of obtaining data that has already been centered and scaled.
+#### Q1 Answer: The issue is what represents a good measure of distance between cases.
+
+Centering and scaling the data is a process by which you transform each feature such that its mean becomes 0, and variance becomes 1. If you center and scale your data before splitting it into training and test sets, then you have used information from your training set to make calculations on your test set. The issue with having data that is already centered and scaled is the measure of distance between cases. If each feature is different/has different units (ex. ft and lb), these features are not comparable. So if we clustered individuals their height in feet and clustered individuals by their weight in lbs, is a 1ft difference as significant as a 1lb difference in weight?
+
+
+### Question 2: What unsupervised analysis do you think is appropriate for this research question? Justify your answer.
+#### Q2 Answer: Hieracrhical clustering is an appropriate unsupervised analysis approach because we are trying to identify clusters based on similarity across features. We would not do a principal components analysis because it is a form of dimensionality reduction, which is based on reducing the number of variables or features under consideration. Dimensionality reduction can either be feature selection or feature extraction, not for identifiying clusters. K-means is an inappropriate approach because our outcome is binary. Since K-means needs to compute means, if we have binary values, discrete attributes or categorial attributes, we tend to stay away from k-means since the mean value is not meaningful on this kind of data. 
 
 Implement the unsupervised analysis you chose in Question 2, implementing appropriate analyses to determine the number of phenotypic clusters to keep within the analysis.
 
 ```{r}
-covid = read.csv("/Users/judyfordjuoh/Desktop/Machine Learning/covid.csv") %>%
-  janitor::clean_names() 
+#Determining if scaling is necessary. Since murder is really low, I'll scale the data
+colMeans(covid, na.rm = TRUE) #the other variables are e-16 while mortality is e-01 so I think I don't have to scale #apply(covid, 2, sd, na.rm=TRUE)
+
+clusters_hcut <- hcut(covid, k = 2, hc_func = "hclust", hc_method = "complete", hc_metric = "euclidian")
+
+clusters_hcut$size
+fviz_dend(clusters_hcut, rect = TRUE)
+fviz_cluster(clusters_hcut)
+
+gap_stat <- clusGap(covid, FUN = hcut, hc_method = "complete", K.max = 10, B = 5)
+fviz_gap_stat(gap_stat)
+
+input.feature.vals <- cbind(covid,cluster = clusters_hcut$cluster)
+
+input.feature.vals %>%
+  group_by(cluster) %>%
+  summarise_all(mean) %>% knitr::kable()
+
 ```
 
-### Step 2: Interpret the clusters
+### STEP 2: Interpret the clusters
 
 Describe the clusters in terms of both their input features and the incidence of mortality within the cluster.
 
-```{r}
+#### I used Euclidean as my distance metric and complete linkage so that I can use the distance between all of the different data points. After visualizing the gapstat, the optimal number of clusters was 2. 
 
-```
+#### In the first cluster there were 94 participants and the second cluster had 84 participants.  In cluster one, the average mortality was 0.2127660 while in cluster two it was 0.130954. Overall in cluster two, the average of all the features were all larger than the averages of the same features in cluster one. For instance, the measure of oxygen saturation was 0.70 in cluster two but in cluster one it was 0.6. We see that all the features averages are larger in cluster 2 except for mortality, which was larger in cluster one. 
 
-Question 3: A researcher at a different medical institution has heard about your analysis and is interested in using your results to determine risk of mortality within their ICU. What are some limitations or concerns of using the results from your unsupervised analysis in a different setting?
 
+
+### Question 3: A researcher at a different medical institution has heard about your analysis and is interested in using your results to determine risk of mortality within their ICU. What are some limitations or concerns of using the results from your unsupervised analysis in a different setting?
+
+#### The clusters formed in the data in my analysis may not align with the clusters that would form in a different setting. Therefore, the assumptions or inferences the researcher would make about risk of mortality within their ICU based on my results, may potentially be biased because the individuals in their ICU may have different, since their feature data may differ.
 
 
 
